@@ -201,7 +201,7 @@ class RenderHandler : public CefRenderHandler
     {
       GstBuffer *new_buffer;
 
-      GST_LOG_OBJECT (element, "painting, width / height: %d %d", w, h);
+      GST_LOG_OBJECT (element, "Capture video, width=%d, height=%d", w, h);
 
       new_buffer = gst_buffer_new_allocate (NULL, element->vinfo.width * element->vinfo.height * 4, NULL);
       gst_buffer_fill (new_buffer, 0, buffer, w * h * 4);
@@ -211,7 +211,7 @@ class RenderHandler : public CefRenderHandler
       gst_buffer_unref (new_buffer);
       GST_OBJECT_UNLOCK (element);
 
-      GST_LOG_OBJECT (element, "done painting");
+      // GST_LOG_OBJECT (element, "done painting");
     }
 
   private:
@@ -288,7 +288,7 @@ class AudioHandler : public CefAudioHandler
     GstMapInfo info;
     gint i, j;
 
-    GST_LOG_OBJECT (mElement, "Handling audio stream packet with %d frames", frames);
+    GST_LOG_OBJECT (mElement, "Capture audio, frames=%d, time=%" GST_TIME_FORMAT, frames, GST_TIME_ARGS(mCurrentTime));
 
     buf = gst_buffer_new_allocate (NULL, mChannels * frames * 4, NULL);
 
@@ -397,7 +397,7 @@ class AudioHandler : public CefAudioHandler
     }
 
     GST_BUFFER_PTS (buf) = mCurrentTime;
-    GST_BUFFER_DTS (buf) = mCurrentTime;
+    //GST_BUFFER_DTS (buf) = mCurrentTime;
     GST_BUFFER_DURATION (buf) = gst_util_uint64_scale (frames, GST_SECOND, mRate);
     mCurrentTime += GST_BUFFER_DURATION (buf);
 
@@ -408,7 +408,7 @@ class AudioHandler : public CefAudioHandler
     gst_buffer_list_add (mElement->audio_buffers, buf);
     GST_OBJECT_UNLOCK (mElement);
 
-    GST_LOG_OBJECT (mElement, "Handled audio stream packet");
+    //GST_LOG_OBJECT (mElement, "Handled audio stream packet");
   }
 
   void OnAudioStreamStopped(CefRefPtr<CefBrowser> browser) override
@@ -644,7 +644,7 @@ static GstFlowReturn gst_cef_src_create(GstPushSrc *push_src, GstBuffer **buf)
       src->n_frames, GST_TIME_ARGS(frame_time));
 
   GST_BUFFER_PTS (*buf) = frame_time;
-  GST_BUFFER_DTS (*buf) = frame_time;
+  //GST_BUFFER_DTS (*buf) = frame_time;
   GST_BUFFER_DURATION (*buf) = frame_duration;
   src->n_frames++;
 
