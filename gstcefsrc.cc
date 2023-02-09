@@ -1073,7 +1073,7 @@ gst_cef_src_init (GstCefSrc * src)
 
   gst_base_src_set_format (base_src, GST_FORMAT_TIME);
   gst_base_src_set_live (base_src, TRUE);
-  gst_base_src_set_do_timestamp (base_src, FALSE);
+  //gst_base_src_set_do_timestamp (base_src, FALSE);
 
   g_cond_init (&src->state_cond);
   g_mutex_init (&src->state_lock);
