@@ -304,13 +304,12 @@ class AudioHandler : public CefAudioHandler
 
     // gst_cef_src_check_n_frames(mElement);
 
-    // Disable sync
-//    GstClock *clock = GST_ELEMENT_CLOCK (mElement);
-//    if (clock) {
-//      gst_object_ref(clock);
-//      GstClockTime now = gst_clock_get_time(clock);
-//      gst_object_unref(clock);
-//
+    GstClock *clock = GST_ELEMENT_CLOCK (mElement);
+    if (clock) {
+      gst_object_ref(clock);
+      GstClockTime now = gst_clock_get_time(clock);
+      gst_object_unref(clock);
+
 //      GstClockTime base_time = GST_ELEMENT_CAST(mElement)->base_time;
 //      GstClockTime running_time = now - base_time;
 //      GstClockTime audio_frame_duration = gst_util_uint64_scale (frames, GST_SECOND, mRate);;
@@ -388,7 +387,7 @@ class AudioHandler : public CefAudioHandler
 //        mCurrentTime = current_time_new;
 //        GST_OBJECT_UNLOCK (mElement);
 //      }
-//    }
+    }
 
     GST_OBJECT_LOCK (mElement);
 
