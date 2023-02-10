@@ -310,11 +310,26 @@ class AudioHandler : public CefAudioHandler
       GstClockTime now = gst_clock_get_time(clock);
       gst_object_unref(clock);
 
-//      GstClockTime base_time = GST_ELEMENT_CAST(mElement)->base_time;
-//      GstClockTime running_time = now - base_time;
-//      GstClockTime audio_frame_duration = gst_util_uint64_scale (frames, GST_SECOND, mRate);;
-//      GstClockTime video_frame_duration = gst_util_uint64_scale (GST_SECOND, mElement->vinfo.fps_d, mElement->vinfo.fps_n);
-//
+      GstClockTime base_time = GST_ELEMENT_CAST(mElement)->base_time;
+      GstClockTime running_time = now - base_time;
+      GstClockTime audio_frame_duration = gst_util_uint64_scale (frames, GST_SECOND, mRate);;
+      GstClockTime video_frame_duration = gst_util_uint64_scale (GST_SECOND, mElement->vinfo.fps_d, mElement->vinfo.fps_n);
+
+      GST_TRACE_OBJECT(
+          mElement,
+          "Init audio frame time"
+            ", audio frame duration=%" GST_TIME_FORMAT
+            ", video frame duration=%" GST_TIME_FORMAT
+            ", now=%" GST_TIME_FORMAT
+            ", base time=%" GST_TIME_FORMAT
+            ", running time=%" GST_TIME_FORMAT,
+          GST_TIME_ARGS(video_frame_duration),
+          GST_TIME_ARGS(audio_frame_duration),
+          GST_TIME_ARGS(now),
+          GST_TIME_ARGS(base_time),
+          GST_TIME_ARGS(running_time)
+        );
+
 //      if (!GST_CLOCK_TIME_IS_VALID (mCurrentTime)) {
 //        GstClockTime current_time_new = running_time > audio_frame_duration ? running_time - audio_frame_duration : 0;
 //
