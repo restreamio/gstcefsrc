@@ -398,7 +398,7 @@ class AudioHandler : public CefAudioHandler
     }
 
     GST_BUFFER_PTS (buf) = mCurrentTime;
-    //GST_BUFFER_DTS (buf) = mCurrentTime;
+    GST_BUFFER_DTS (buf) = mCurrentTime;
     GST_BUFFER_DURATION (buf) = gst_util_uint64_scale (frames, GST_SECOND, mRate);
     mCurrentTime += GST_BUFFER_DURATION (buf);
 
@@ -646,7 +646,7 @@ static GstFlowReturn gst_cef_src_create(GstPushSrc *push_src, GstBuffer **buf)
       src->n_frames, GST_TIME_ARGS(frame_time));
 
   GST_BUFFER_PTS (*buf) = frame_time;
-  //GST_BUFFER_DTS (*buf) = frame_time;
+  GST_BUFFER_DTS (*buf) = frame_time;
   GST_BUFFER_DURATION (*buf) = frame_duration;
   src->n_frames++;
 
@@ -1075,7 +1075,7 @@ gst_cef_src_init (GstCefSrc * src)
 
   gst_base_src_set_format (base_src, GST_FORMAT_TIME);
   gst_base_src_set_live (base_src, TRUE);
-  //gst_base_src_set_do_timestamp (base_src, FALSE);
+  gst_base_src_set_do_timestamp (base_src, FALSE);
 
   g_cond_init (&src->state_cond);
   g_mutex_init (&src->state_lock);
