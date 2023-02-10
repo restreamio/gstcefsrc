@@ -86,94 +86,93 @@ gchar* get_plugin_base_path () {
   return base_path;
 }
 
-// Disable sync
-//static gboolean  gst_cef_src_check_n_frames(GstCefSrc *src) {
-//  GstClock *clock = GST_ELEMENT_CLOCK (src);
-//  if (!clock) {
-//    GST_WARNING_OBJECT(src, "Can't get element clock object");
-//    return FALSE;
-//  }
-//
-//  gst_object_ref (clock);
-//  GstClockTime now = gst_clock_get_time (clock);
-//  gst_object_unref (clock);
-//
-//  GstClockTime base_time = GST_ELEMENT_CAST (src)->base_time;
-//  GstClockTime running_time = now - base_time;
-//  GstClockTime frame_time = gst_util_uint64_scale (src->n_frames, src->vinfo.fps_d * GST_SECOND, src->vinfo.fps_n);
-//  GstClockTime frame_duration = gst_util_uint64_scale (GST_SECOND, src->vinfo.fps_d, src->vinfo.fps_n);
-//
-//  if (frame_time + frame_duration * 2 < running_time) {
-//    guint64 n_frames_new = gst_util_uint64_scale (running_time, src->vinfo.fps_n, src->vinfo.fps_d * GST_SECOND);
-//
-//    if (src->n_frames) {
-//      GST_WARNING_OBJECT(
-//          src,
-//          "Video frame time is behind pipeline running time"
-//            ", frame index=%" G_GUINT64_FORMAT
-//            ", frame time=%" GST_TIME_FORMAT
-//            ", new frame index=%" G_GUINT64_FORMAT
-//            ", frame duration=%" GST_TIME_FORMAT
-//            ", now=%" GST_TIME_FORMAT
-//            ", base time=%" GST_TIME_FORMAT
-//            ", running time=%" GST_TIME_FORMAT,
-//          src->n_frames,
-//          GST_TIME_ARGS(frame_time),
-//          n_frames_new,
-//          GST_TIME_ARGS(frame_duration),
-//          GST_TIME_ARGS(now),
-//          GST_TIME_ARGS(base_time),
-//          GST_TIME_ARGS(running_time)
-//      );
-//    }
-//    else {
-//      GST_INFO_OBJECT(
-//          src,
-//          "Init video frame time"
-//            ", new frame index=%" G_GUINT64_FORMAT
-//            ", now=%" GST_TIME_FORMAT
-//            ", base time=%" GST_TIME_FORMAT
-//            ", running time=%" GST_TIME_FORMAT,
-//          n_frames_new,
-//          GST_TIME_ARGS(now),
-//          GST_TIME_ARGS(base_time),
-//          GST_TIME_ARGS(running_time)
-//      );
-//    }
-//
+static gboolean  gst_cef_src_check_n_frames(GstCefSrc *src) {
+  GstClock *clock = GST_ELEMENT_CLOCK (src);
+  if (!clock) {
+    GST_WARNING_OBJECT(src, "Can't get element clock object");
+    return FALSE;
+  }
+
+  gst_object_ref (clock);
+  GstClockTime now = gst_clock_get_time (clock);
+  gst_object_unref (clock);
+
+  GstClockTime base_time = GST_ELEMENT_CAST (src)->base_time;
+  GstClockTime running_time = now - base_time;
+  GstClockTime frame_time = gst_util_uint64_scale (src->n_frames, src->vinfo.fps_d * GST_SECOND, src->vinfo.fps_n);
+  GstClockTime frame_duration = gst_util_uint64_scale (GST_SECOND, src->vinfo.fps_d, src->vinfo.fps_n);
+
+  if (frame_time + frame_duration * 2 < running_time) {
+    guint64 n_frames_new = gst_util_uint64_scale (running_time, src->vinfo.fps_n, src->vinfo.fps_d * GST_SECOND);
+
+    if (src->n_frames) {
+      GST_INFO_OBJECT(
+          src,
+          "Video frame time is behind pipeline running time"
+            ", frame index=%" G_GUINT64_FORMAT
+            ", frame time=%" GST_TIME_FORMAT
+            ", new frame index=%" G_GUINT64_FORMAT
+            ", frame duration=%" GST_TIME_FORMAT
+            ", now=%" GST_TIME_FORMAT
+            ", base time=%" GST_TIME_FORMAT
+            ", running time=%" GST_TIME_FORMAT,
+          src->n_frames,
+          GST_TIME_ARGS(frame_time),
+          n_frames_new,
+          GST_TIME_ARGS(frame_duration),
+          GST_TIME_ARGS(now),
+          GST_TIME_ARGS(base_time),
+          GST_TIME_ARGS(running_time)
+      );
+    }
+    else {
+      GST_INFO_OBJECT(
+          src,
+          "Init video frame time"
+            ", new frame index=%" G_GUINT64_FORMAT
+            ", now=%" GST_TIME_FORMAT
+            ", base time=%" GST_TIME_FORMAT
+            ", running time=%" GST_TIME_FORMAT,
+          n_frames_new,
+          GST_TIME_ARGS(now),
+          GST_TIME_ARGS(base_time),
+          GST_TIME_ARGS(running_time)
+      );
+    }
+
 //    GST_OBJECT_LOCK (src);
 //    src->n_frames = n_frames_new;
 //    GST_OBJECT_UNLOCK (src);
-//  }
-//  else if (frame_time > running_time + frame_duration) {
-//    guint64 n_frames_new = gst_util_uint64_scale (running_time, src->vinfo.fps_n, src->vinfo.fps_d * GST_SECOND);
-//
-//    GST_WARNING_OBJECT(
-//        src,
-//        "Video frame time is ahead of pipeline running time"
-//        ", frame index=%" G_GUINT64_FORMAT
-//        ", frame time=%" GST_TIME_FORMAT
-//        ", new frame index=%" G_GUINT64_FORMAT
-//        ", frame duration=%" GST_TIME_FORMAT
-//        ", now=%" GST_TIME_FORMAT
-//        ", base time=%" GST_TIME_FORMAT
-//        ", running time=%" GST_TIME_FORMAT,
-//        src->n_frames,
-//        GST_TIME_ARGS(frame_time),
-//        n_frames_new,
-//        GST_TIME_ARGS(frame_duration),
-//        GST_TIME_ARGS(now),
-//        GST_TIME_ARGS(base_time),
-//        GST_TIME_ARGS(running_time)
-//    );
-//
+  }
+  else if (frame_time > running_time + frame_duration) {
+    guint64 n_frames_new = gst_util_uint64_scale (running_time, src->vinfo.fps_n, src->vinfo.fps_d * GST_SECOND);
+
+    GST_INFO_OBJECT(
+        src,
+        "Video frame time is ahead of pipeline running time"
+        ", frame index=%" G_GUINT64_FORMAT
+        ", frame time=%" GST_TIME_FORMAT
+        ", new frame index=%" G_GUINT64_FORMAT
+        ", frame duration=%" GST_TIME_FORMAT
+        ", now=%" GST_TIME_FORMAT
+        ", base time=%" GST_TIME_FORMAT
+        ", running time=%" GST_TIME_FORMAT,
+        src->n_frames,
+        GST_TIME_ARGS(frame_time),
+        n_frames_new,
+        GST_TIME_ARGS(frame_duration),
+        GST_TIME_ARGS(now),
+        GST_TIME_ARGS(base_time),
+        GST_TIME_ARGS(running_time)
+    );
+
 //    GST_OBJECT_LOCK (src);
 //    src->n_frames = n_frames_new;
 //    GST_OBJECT_UNLOCK (src);
-//  }
-//
-//  return TRUE;
-//}
+  }
+
+  return TRUE;
+}
 
 
 class RenderHandler : public CefRenderHandler
@@ -201,7 +200,7 @@ class RenderHandler : public CefRenderHandler
     {
       GstBuffer *new_buffer;
 
-      GST_LOG_OBJECT (element, "Capture video, width=%d, height=%d", w, h);
+      GST_LOG_OBJECT (element, "Capture video (v20), width=%d, height=%d", w, h);
 
       new_buffer = gst_buffer_new_allocate (NULL, element->vinfo.width * element->vinfo.height * 4, NULL);
       gst_buffer_fill (new_buffer, 0, buffer, w * h * 4);
@@ -302,7 +301,7 @@ class AudioHandler : public CefAudioHandler
     }
     gst_buffer_unmap (buf, &info);
 
-    // gst_cef_src_check_n_frames(mElement);
+    //gst_cef_src_check_n_frames(mElement);
 
     GstClock *clock = GST_ELEMENT_CLOCK (mElement);
     if (clock) {
@@ -630,9 +629,8 @@ static GstFlowReturn gst_cef_src_create(GstPushSrc *push_src, GstBuffer **buf)
   GstCefSrc *src = GST_CEF_SRC (push_src);
   GList *tmp;
 
-  // Disable sync
-//  if (!gst_cef_src_check_n_frames(src))
-//    return GST_FLOW_ERROR;
+  if (!gst_cef_src_check_n_frames(src))
+    return GST_FLOW_ERROR;
 
   GST_OBJECT_LOCK (src);
 
