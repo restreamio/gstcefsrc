@@ -288,7 +288,7 @@ class AudioHandler : public CefAudioHandler
     GstMapInfo info;
     gint i, j;
 
-    GST_LOG_OBJECT (mElement, "Capture audio, frames=%d, time=%" GST_TIME_FORMAT, frames, GST_TIME_ARGS(mCurrentTime));
+    GST_LOG_OBJECT (mElement, "Capture audio, samples=%d, time=%" GST_TIME_FORMAT, frames, GST_TIME_ARGS(mCurrentTime));
 
     buf = gst_buffer_new_allocate (NULL, mChannels * frames * 4, NULL);
 
