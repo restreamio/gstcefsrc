@@ -34,7 +34,12 @@ struct _GstCefSrc {
   GstBufferList *audio_buffers;
   GList *audio_events;
   GstVideoInfo vinfo;
-  guint64 n_frames;
+
+  GstClockTime global_frame_time;
+  guint64 video_frame_index;
+  GstClockTime audio_frame_time;
+  GstClockTime audio_frame_duration;
+
   gulong cef_work_id;
   gchar *url;
   gchar *chrome_extra_flags;
