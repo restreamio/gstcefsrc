@@ -35,10 +35,10 @@ struct _GstCefSrc {
   GList *audio_events;
   GstVideoInfo vinfo;
 
-  GstClockTime global_frame_time;
+  //GstClockTime global_frame_time;
   guint64 video_frame_index;
   GstClockTime audio_frame_time;
-  GstClockTime audio_frame_duration;
+  //GstClockTime audio_frame_duration;
 
   gulong cef_work_id;
   gchar *url;
