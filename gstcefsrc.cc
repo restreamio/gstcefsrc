@@ -107,11 +107,11 @@ static gboolean  gst_cef_src_check_n_frames(GstCefSrc *src) {
 
     GST_INFO_OBJECT(
         src,
-        "Init video frame time"
-        ", new frame index=%" G_GUINT64_FORMAT
-            ", now=%" GST_TIME_FORMAT
-            ", base time=%" GST_TIME_FORMAT
-            ", running time=%" GST_TIME_FORMAT,
+        "Video init time"
+          ", start index=%" G_GUINT64_FORMAT
+          ", now=%" GST_TIME_FORMAT
+          ", base=%" GST_TIME_FORMAT
+          ", pipeline=%" GST_TIME_FORMAT,
         n_frames_new,
         GST_TIME_ARGS(now),
         GST_TIME_ARGS(base_time),
@@ -127,14 +127,14 @@ static gboolean  gst_cef_src_check_n_frames(GstCefSrc *src) {
 
     GST_INFO_OBJECT(
         src,
-        "Video frame time is behind pipeline running time"
-          ", frame index=%" G_GUINT64_FORMAT
-          ", frame time=%" GST_TIME_FORMAT
-          ", new frame index=%" G_GUINT64_FORMAT
-          ", frame duration=%" GST_TIME_FORMAT
+        "Video time is behind pipeline running time"
+          ", cur index=%" G_GUINT64_FORMAT
+          ", cur time=%" GST_TIME_FORMAT
+          ", new index=%" G_GUINT64_FORMAT
+          ", duration=%" GST_TIME_FORMAT
           ", now=%" GST_TIME_FORMAT
-          ", base time=%" GST_TIME_FORMAT
-          ", running time=%" GST_TIME_FORMAT,
+          ", base=%" GST_TIME_FORMAT
+          ", pipeline=%" GST_TIME_FORMAT,
         src->n_frames,
         GST_TIME_ARGS(frame_time),
         n_frames_new,
@@ -153,14 +153,14 @@ static gboolean  gst_cef_src_check_n_frames(GstCefSrc *src) {
 
     GST_INFO_OBJECT(
         src,
-        "Video frame time is ahead of pipeline running time"
-        ", frame index=%" G_GUINT64_FORMAT
-        ", frame time=%" GST_TIME_FORMAT
-        ", new frame index=%" G_GUINT64_FORMAT
-        ", frame duration=%" GST_TIME_FORMAT
-        ", now=%" GST_TIME_FORMAT
-        ", base time=%" GST_TIME_FORMAT
-        ", running time=%" GST_TIME_FORMAT,
+        "Video time is ahead of pipeline running time"
+          ", cur index=%" G_GUINT64_FORMAT
+          ", cur time=%" GST_TIME_FORMAT
+          ", new index=%" G_GUINT64_FORMAT
+          ", duration=%" GST_TIME_FORMAT
+          ", now=%" GST_TIME_FORMAT
+          ", base=%" GST_TIME_FORMAT
+          ", pipeline=%" GST_TIME_FORMAT,
         src->n_frames,
         GST_TIME_ARGS(frame_time),
         n_frames_new,
@@ -173,6 +173,20 @@ static gboolean  gst_cef_src_check_n_frames(GstCefSrc *src) {
     GST_OBJECT_LOCK (src);
     src->n_frames = n_frames_new;
     GST_OBJECT_UNLOCK (src);
+  }
+  else {
+    GST_DEBUG_OBJECT(
+      src,
+      "Video check time"
+        ", index=%" G_GUINT64_FORMAT
+        ", time=%" GST_TIME_FORMAT
+        ", duration=%" GST_TIME_FORMAT
+        ", pipeline=%" GST_TIME_FORMAT,
+      src->n_frames,
+      GST_TIME_ARGS(frame_time),
+      GST_TIME_ARGS(frame_duration),
+      GST_TIME_ARGS(running_time)
+    );
   }
 
   return TRUE;
@@ -204,7 +218,7 @@ class RenderHandler : public CefRenderHandler
     {
       GstBuffer *new_buffer;
 
-      GST_LOG_OBJECT (element, "Capture video (v21), width=%d, height=%d", w, h);
+      GST_LOG_OBJECT (element, "Capture video, width=%d, height=%d", w, h);
 
       new_buffer = gst_buffer_new_allocate (NULL, element->vinfo.width * element->vinfo.height * 4, NULL);
       gst_buffer_fill (new_buffer, 0, buffer, w * h * 4);
@@ -399,16 +413,20 @@ class AudioHandler : public CefAudioHandler
 
     GstClockTime audio_duration = gst_util_uint64_scale (frames, GST_SECOND, mRate);
     GstClockTime video_duration = gst_util_uint64_scale (GST_SECOND, mElement->vinfo.fps_d, mElement->vinfo.fps_n);
-    GstClockTime video_time = gst_util_uint64_scale (mElement->n_frames ? mElement->n_frames - 1 : 0,
+//    GstClockTime video_time = gst_util_uint64_scale (mElement->n_frames ? mElement->n_frames - 1 : 0,
+//                                                     mElement->vinfo.fps_d * GST_SECOND,
+//                                                     mElement->vinfo.fps_n);
+    GstClockTime video_time = gst_util_uint64_scale (mElement->n_frames,
                                                      mElement->vinfo.fps_d * GST_SECOND,
                                                      mElement->vinfo.fps_n);
 
     if (!GST_CLOCK_TIME_IS_VALID (mCurrentTime)) {
-      GstClockTime current_time_new = video_time + video_duration / 2 - audio_duration;
+      //GstClockTime current_time_new = video_time + video_duration / 2 - audio_duration;
+      GstClockTime current_time_new = video_time - audio_duration;
 
       GST_INFO_OBJECT(
           mElement,
-          "Init audio time"
+          "Audio init time"
             ", new audio time=%" GST_TIME_FORMAT
             ", audio duration=%" GST_TIME_FORMAT
             ", video time=%" GST_TIME_FORMAT
@@ -422,7 +440,8 @@ class AudioHandler : public CefAudioHandler
       mCurrentTime = current_time_new;
     }
     else if (mCurrentTime + audio_duration < video_time) {
-      GstClockTime current_time_new = video_time + video_duration / 2 - audio_duration;
+      //GstClockTime current_time_new = video_time + video_duration / 2 - audio_duration;
+      GstClockTime current_time_new = video_time - audio_duration;
 
       GST_INFO_OBJECT(
           mElement,
@@ -444,7 +463,8 @@ class AudioHandler : public CefAudioHandler
     // TODO additionally need to check first captured audio frame after video frame capturing
     // TODO or compare with pipeline running time: if (mCurrentTime > pipeline_time + audio_duration + video_duration)...
     else if (mCurrentTime > video_time + audio_duration + video_duration * 2) {
-      GstClockTime current_time_new = video_time + video_duration / 2 - audio_duration;
+      //GstClockTime current_time_new = video_time + video_duration / 2 - audio_duration;
+      GstClockTime current_time_new = video_time - audio_duration;
 
       GST_INFO_OBJECT(
           mElement,
