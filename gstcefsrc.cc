@@ -419,9 +419,7 @@ class AudioHandler : public CefAudioHandler
           GST_TIME_ARGS(video_duration)
       );
 
-      GST_OBJECT_LOCK (mElement);
       mCurrentTime = current_time_new;
-      GST_OBJECT_UNLOCK (mElement);
     }
     else if (mCurrentTime + audio_duration < video_time) {
       GstClockTime current_time_new = video_time + video_duration / 2 - audio_duration;
@@ -441,9 +439,7 @@ class AudioHandler : public CefAudioHandler
           GST_TIME_ARGS(video_duration)
       );
 
-      GST_OBJECT_LOCK (mElement);
       mCurrentTime = current_time_new;
-      GST_OBJECT_UNLOCK (mElement);
     }
     // TODO additionally need to check first captured audio frame after video frame capturing
     // TODO or compare with pipeline running time: if (mCurrentTime > pipeline_time + audio_duration + video_duration)...
@@ -465,9 +461,7 @@ class AudioHandler : public CefAudioHandler
           GST_TIME_ARGS(video_duration)
       );
 
-        GST_OBJECT_LOCK (mElement);
         mCurrentTime = current_time_new;
-        GST_OBJECT_UNLOCK (mElement);
     }
 
 //    if (!GST_CLOCK_TIME_IS_VALID (mCurrentTime)) {
