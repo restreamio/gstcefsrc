@@ -135,7 +135,6 @@ static gboolean gst_cef_src_check_time(GstCefSrc *src) {
     video_frame_time = gst_util_uint64_scale (src->video_frame_index, src->vinfo.fps_d * GST_SECOND, src->vinfo.fps_n);
   }
 
-  // TODO Store current global time and calc time offset when audio packet arrives
   if (audio_frame_time < video_frame_time
       || audio_frame_time > video_frame_time + video_frame_duration + audio_frame_duration) {
 
