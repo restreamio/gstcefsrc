@@ -102,47 +102,51 @@ static gboolean  gst_cef_src_check_n_frames(GstCefSrc *src) {
   GstClockTime frame_time = gst_util_uint64_scale (src->n_frames, src->vinfo.fps_d * GST_SECOND, src->vinfo.fps_n);
   GstClockTime frame_duration = gst_util_uint64_scale (GST_SECOND, src->vinfo.fps_d, src->vinfo.fps_n);
 
-  if (frame_time + frame_duration * 2 < running_time) {
+  if (!src->n_frames) {
     guint64 n_frames_new = gst_util_uint64_scale (running_time, src->vinfo.fps_n, src->vinfo.fps_d * GST_SECOND);
 
-    if (src->n_frames) {
-      GST_INFO_OBJECT(
-          src,
-          "Video frame time is behind pipeline running time"
-            ", frame index=%" G_GUINT64_FORMAT
-            ", frame time=%" GST_TIME_FORMAT
-            ", new frame index=%" G_GUINT64_FORMAT
-            ", frame duration=%" GST_TIME_FORMAT
+    GST_INFO_OBJECT(
+        src,
+        "Init video frame time"
+        ", new frame index=%" G_GUINT64_FORMAT
             ", now=%" GST_TIME_FORMAT
             ", base time=%" GST_TIME_FORMAT
             ", running time=%" GST_TIME_FORMAT,
-          src->n_frames,
-          GST_TIME_ARGS(frame_time),
-          n_frames_new,
-          GST_TIME_ARGS(frame_duration),
-          GST_TIME_ARGS(now),
-          GST_TIME_ARGS(base_time),
-          GST_TIME_ARGS(running_time)
-      );
-    }
-    else {
-      GST_INFO_OBJECT(
-          src,
-          "Init video frame time"
-            ", new frame index=%" G_GUINT64_FORMAT
-            ", now=%" GST_TIME_FORMAT
-            ", base time=%" GST_TIME_FORMAT
-            ", running time=%" GST_TIME_FORMAT,
-          n_frames_new,
-          GST_TIME_ARGS(now),
-          GST_TIME_ARGS(base_time),
-          GST_TIME_ARGS(running_time)
-      );
-    }
+        n_frames_new,
+        GST_TIME_ARGS(now),
+        GST_TIME_ARGS(base_time),
+        GST_TIME_ARGS(running_time)
+    );
 
-//    GST_OBJECT_LOCK (src);
-//    src->n_frames = n_frames_new;
-//    GST_OBJECT_UNLOCK (src);
+    GST_OBJECT_LOCK (src);
+    src->n_frames = n_frames_new;
+    GST_OBJECT_UNLOCK (src);
+  }
+  else if (frame_time + frame_duration < running_time) {
+    guint64 n_frames_new = gst_util_uint64_scale (running_time, src->vinfo.fps_n, src->vinfo.fps_d * GST_SECOND);
+
+    GST_INFO_OBJECT(
+        src,
+        "Video frame time is behind pipeline running time"
+          ", frame index=%" G_GUINT64_FORMAT
+          ", frame time=%" GST_TIME_FORMAT
+          ", new frame index=%" G_GUINT64_FORMAT
+          ", frame duration=%" GST_TIME_FORMAT
+          ", now=%" GST_TIME_FORMAT
+          ", base time=%" GST_TIME_FORMAT
+          ", running time=%" GST_TIME_FORMAT,
+        src->n_frames,
+        GST_TIME_ARGS(frame_time),
+        n_frames_new,
+        GST_TIME_ARGS(frame_duration),
+        GST_TIME_ARGS(now),
+        GST_TIME_ARGS(base_time),
+        GST_TIME_ARGS(running_time)
+    );
+
+    GST_OBJECT_LOCK (src);
+    src->n_frames = n_frames_new;
+    GST_OBJECT_UNLOCK (src);
   }
   else if (frame_time > running_time + frame_duration) {
     guint64 n_frames_new = gst_util_uint64_scale (running_time, src->vinfo.fps_n, src->vinfo.fps_d * GST_SECOND);
@@ -166,9 +170,9 @@ static gboolean  gst_cef_src_check_n_frames(GstCefSrc *src) {
         GST_TIME_ARGS(running_time)
     );
 
-//    GST_OBJECT_LOCK (src);
-//    src->n_frames = n_frames_new;
-//    GST_OBJECT_UNLOCK (src);
+    GST_OBJECT_LOCK (src);
+    src->n_frames = n_frames_new;
+    GST_OBJECT_UNLOCK (src);
   }
 
   return TRUE;
@@ -200,7 +204,7 @@ class RenderHandler : public CefRenderHandler
     {
       GstBuffer *new_buffer;
 
-      GST_LOG_OBJECT (element, "Capture video (v20), width=%d, height=%d", w, h);
+      GST_LOG_OBJECT (element, "Capture video (v21), width=%d, height=%d", w, h);
 
       new_buffer = gst_buffer_new_allocate (NULL, element->vinfo.width * element->vinfo.height * 4, NULL);
       gst_buffer_fill (new_buffer, 0, buffer, w * h * 4);
@@ -303,112 +307,178 @@ class AudioHandler : public CefAudioHandler
 
     //gst_cef_src_check_n_frames(mElement);
 
-    GstClock *clock = GST_ELEMENT_CLOCK (mElement);
-    if (clock) {
-      gst_object_ref(clock);
-      GstClockTime now = gst_clock_get_time(clock);
-      gst_object_unref(clock);
-
-      GstClockTime base_time = GST_ELEMENT_CAST(mElement)->base_time;
-      GstClockTime running_time = now - base_time;
-      GstClockTime audio_frame_duration = gst_util_uint64_scale (frames, GST_SECOND, mRate);;
-      GstClockTime video_frame_duration = gst_util_uint64_scale (GST_SECOND, mElement->vinfo.fps_d, mElement->vinfo.fps_n);
-
-//      GST_TRACE_OBJECT(
-//          mElement,
-//          "Init audio frame time"
-//            ", audio frame duration=%" GST_TIME_FORMAT
-//            ", video frame duration=%" GST_TIME_FORMAT
-//            ", now=%" GST_TIME_FORMAT
-//            ", base time=%" GST_TIME_FORMAT
-//            ", running time=%" GST_TIME_FORMAT,
-//          GST_TIME_ARGS(video_frame_duration),
-//          GST_TIME_ARGS(audio_frame_duration),
-//          GST_TIME_ARGS(now),
-//          GST_TIME_ARGS(base_time),
-//          GST_TIME_ARGS(running_time)
+//    GstClock *clock = GST_ELEMENT_CLOCK (mElement);
+//    if (clock) {
+//      gst_object_ref(clock);
+//      GstClockTime now = gst_clock_get_time(clock);
+//      gst_object_unref(clock);
+//
+//      GstClockTime base_time = GST_ELEMENT_CAST(mElement)->base_time;
+//      GstClockTime running_time = now - base_time;
+//      GstClockTime audio_frame_duration = gst_util_uint64_scale (frames, GST_SECOND, mRate);
+//      GstClockTime video_frame_duration = gst_util_uint64_scale (GST_SECOND, mElement->vinfo.fps_d, mElement->vinfo.fps_n);
+//
+//      if (!GST_CLOCK_TIME_IS_VALID (mCurrentTime)) {
+//        GstClockTime current_time_new = running_time > audio_frame_duration ? running_time - audio_frame_duration : 0 +
+//            video_frame_duration / 2;
+//
+//        GST_INFO_OBJECT(
+//            mElement,
+//            "Init audio frame time"
+//              ", new frame time=%" GST_TIME_FORMAT
+//              ", frame duration=%" GST_TIME_FORMAT
+//              ", now=%" GST_TIME_FORMAT
+//              ", base time=%" GST_TIME_FORMAT
+//              ", running time=%" GST_TIME_FORMAT,
+//            GST_TIME_ARGS(current_time_new),
+//            GST_TIME_ARGS(audio_frame_duration),
+//            GST_TIME_ARGS(now),
+//            GST_TIME_ARGS(base_time),
+//            GST_TIME_ARGS(running_time)
 //        );
-
-      if (!GST_CLOCK_TIME_IS_VALID (mCurrentTime)) {
-        GstClockTime current_time_new = running_time > audio_frame_duration ? running_time - audio_frame_duration : 0;
-
-        GST_INFO_OBJECT(
-            mElement,
-            "Init audio frame time"
-              ", new frame time=%" GST_TIME_FORMAT
-              ", frame duration=%" GST_TIME_FORMAT
-              ", now=%" GST_TIME_FORMAT
-              ", base time=%" GST_TIME_FORMAT
-              ", running time=%" GST_TIME_FORMAT,
-            GST_TIME_ARGS(current_time_new),
-            GST_TIME_ARGS(audio_frame_duration),
-            GST_TIME_ARGS(now),
-            GST_TIME_ARGS(base_time),
-            GST_TIME_ARGS(running_time)
-        );
-
+//
 //        GST_OBJECT_LOCK (mElement);
 //        mCurrentTime = current_time_new;
 //        GST_OBJECT_UNLOCK (mElement);
-      }
-      else if (mCurrentTime + audio_frame_duration * 2 < running_time) {
-        GstClockTime current_time_new = running_time > audio_frame_duration ? running_time - audio_frame_duration : 0;
-
-        GST_INFO_OBJECT(
-            mElement,
-            "Audio frame time is behind pipeline running time"
-              ", frame time=%" GST_TIME_FORMAT
-              ", new frame time=%" GST_TIME_FORMAT
-              ", frame duration=%" GST_TIME_FORMAT
-              ", now=%" GST_TIME_FORMAT
-              ", base time=%" GST_TIME_FORMAT
-              ", running time=%" GST_TIME_FORMAT,
-            GST_TIME_ARGS(mCurrentTime),
-            GST_TIME_ARGS(current_time_new),
-            GST_TIME_ARGS(audio_frame_duration),
-            GST_TIME_ARGS(now),
-            GST_TIME_ARGS(base_time),
-            GST_TIME_ARGS(running_time)
-        );
-
-//        GST_OBJECT_LOCK (mElement);
-//        mCurrentTime = current_time_new;
-//        GST_OBJECT_UNLOCK (mElement);
-      }
-      else if (mCurrentTime > running_time + video_frame_duration * 2) {
-        GstClockTime current_time_new = running_time > audio_frame_duration ? running_time - audio_frame_duration : 0;
-
-        GST_INFO_OBJECT(
-            mElement,
-            "Audio frame time is ahead of pipeline running time"
-              ", frame time=%" GST_TIME_FORMAT
-              ", new frame time=%" GST_TIME_FORMAT
-              ", frame duration=%" GST_TIME_FORMAT
-              ", video frame duration=%" GST_TIME_FORMAT
-              ", now=%" GST_TIME_FORMAT
-              ", base time=%" GST_TIME_FORMAT
-              ", running time=%" GST_TIME_FORMAT,
-            GST_TIME_ARGS(mCurrentTime),
-            GST_TIME_ARGS(current_time_new),
-            GST_TIME_ARGS(audio_frame_duration),
-            GST_TIME_ARGS(video_frame_duration),
-            GST_TIME_ARGS(now),
-            GST_TIME_ARGS(base_time),
-            GST_TIME_ARGS(running_time)
-        );
-
-//        GST_OBJECT_LOCK (mElement);
-//        mCurrentTime = current_time_new;
-//        GST_OBJECT_UNLOCK (mElement);
-      }
-    }
+//      }
+//      else if (mCurrentTime + audio_frame_duration < running_time) {
+//        GstClockTime current_time_new = running_time > audio_frame_duration ? running_time - audio_frame_duration : 0 +
+//            video_frame_duration / 2;
+//
+//        GST_INFO_OBJECT(
+//            mElement,
+//            "Audio frame time is behind pipeline running time"
+//              ", frame time=%" GST_TIME_FORMAT
+//              ", new frame time=%" GST_TIME_FORMAT
+//              ", frame duration=%" GST_TIME_FORMAT
+//              ", now=%" GST_TIME_FORMAT
+//              ", base time=%" GST_TIME_FORMAT
+//              ", running time=%" GST_TIME_FORMAT,
+//            GST_TIME_ARGS(mCurrentTime),
+//            GST_TIME_ARGS(current_time_new),
+//            GST_TIME_ARGS(audio_frame_duration),
+//            GST_TIME_ARGS(now),
+//            GST_TIME_ARGS(base_time),
+//            GST_TIME_ARGS(running_time)
+//        );
+//
+////        GST_OBJECT_LOCK (mElement);
+////        mCurrentTime = current_time_new;
+////        GST_OBJECT_UNLOCK (mElement);
+//      }
+//      else if (mCurrentTime > running_time + audio_frame_duration + video_frame_duration) {
+//        GstClockTime current_time_new = running_time > audio_frame_duration ? running_time - audio_frame_duration : 0 +
+//            video_frame_duration / 2;
+//
+//        GST_INFO_OBJECT(
+//            mElement,
+//            "Audio frame time is ahead of pipeline running time"
+//              ", frame time=%" GST_TIME_FORMAT
+//              ", new frame time=%" GST_TIME_FORMAT
+//              ", frame duration=%" GST_TIME_FORMAT
+//              ", video frame duration=%" GST_TIME_FORMAT
+//              ", now=%" GST_TIME_FORMAT
+//              ", base time=%" GST_TIME_FORMAT
+//              ", running time=%" GST_TIME_FORMAT,
+//            GST_TIME_ARGS(mCurrentTime),
+//            GST_TIME_ARGS(current_time_new),
+//            GST_TIME_ARGS(audio_frame_duration),
+//            GST_TIME_ARGS(video_frame_duration),
+//            GST_TIME_ARGS(now),
+//            GST_TIME_ARGS(base_time),
+//            GST_TIME_ARGS(running_time)
+//        );
+//
+////        GST_OBJECT_LOCK (mElement);
+////        mCurrentTime = current_time_new;
+////        GST_OBJECT_UNLOCK (mElement);
+//      }
+//    }
 
     GST_OBJECT_LOCK (mElement);
 
+    GstClockTime audio_duration = gst_util_uint64_scale (frames, GST_SECOND, mRate);
+    GstClockTime video_duration = gst_util_uint64_scale (GST_SECOND, mElement->vinfo.fps_d, mElement->vinfo.fps_n);
+    GstClockTime video_time = gst_util_uint64_scale (mElement->n_frames ? mElement->n_frames - 1 : 0,
+                                                     mElement->vinfo.fps_d * GST_SECOND,
+                                                     mElement->vinfo.fps_n);
+
     if (!GST_CLOCK_TIME_IS_VALID (mCurrentTime)) {
-      mCurrentTime = gst_util_uint64_scale (mElement->n_frames, mElement->vinfo.fps_d * GST_SECOND, mElement->vinfo.fps_n);
-      GST_WARNING_OBJECT(mElement, "Init audio time from video frame counter, time=%" GST_TIME_FORMAT, GST_TIME_ARGS(mCurrentTime));
+      GstClockTime current_time_new = video_time + video_duration / 2 - audio_duration;
+
+      GST_INFO_OBJECT(
+          mElement,
+          "Init audio time"
+            ", new audio time=%" GST_TIME_FORMAT
+            ", audio duration=%" GST_TIME_FORMAT
+            ", video time=%" GST_TIME_FORMAT
+            ", video duration=%" GST_TIME_FORMAT,
+          GST_TIME_ARGS(current_time_new),
+          GST_TIME_ARGS(audio_duration),
+          GST_TIME_ARGS(video_time),
+          GST_TIME_ARGS(video_duration)
+      );
+
+      GST_OBJECT_LOCK (mElement);
+      mCurrentTime = current_time_new;
+      GST_OBJECT_UNLOCK (mElement);
     }
+    else if (mCurrentTime + audio_duration < video_time) {
+      GstClockTime current_time_new = video_time + video_duration / 2 - audio_duration;
+
+      GST_INFO_OBJECT(
+          mElement,
+          "Audio time is behind video time"
+            ", cur audio time=%" GST_TIME_FORMAT
+            ", new audio time=%" GST_TIME_FORMAT
+            ", audio duration=%" GST_TIME_FORMAT
+            ", video time=%" GST_TIME_FORMAT
+            ", video duration=%" GST_TIME_FORMAT,
+          GST_TIME_ARGS(mCurrentTime),
+          GST_TIME_ARGS(current_time_new),
+          GST_TIME_ARGS(audio_duration),
+          GST_TIME_ARGS(video_time),
+          GST_TIME_ARGS(video_duration)
+      );
+
+      GST_OBJECT_LOCK (mElement);
+      mCurrentTime = current_time_new;
+      GST_OBJECT_UNLOCK (mElement);
+    }
+    // TODO additionally need to check first captured audio frame after video frame capturing
+    // TODO or compare with pipeline running time: if (mCurrentTime > pipeline_time + audio_duration + video_duration)...
+    else if (mCurrentTime > video_time + audio_duration + video_duration * 2) {
+      GstClockTime current_time_new = video_time + video_duration / 2 - audio_duration;
+
+      GST_INFO_OBJECT(
+          mElement,
+          "Audio frame time is ahead of pipeline running time"
+          ", cur audio time=%" GST_TIME_FORMAT
+            ", new audio time=%" GST_TIME_FORMAT
+            ", audio duration=%" GST_TIME_FORMAT
+            ", video time=%" GST_TIME_FORMAT
+            ", video duration=%" GST_TIME_FORMAT,
+          GST_TIME_ARGS(mCurrentTime),
+          GST_TIME_ARGS(current_time_new),
+          GST_TIME_ARGS(audio_duration),
+          GST_TIME_ARGS(video_time),
+          GST_TIME_ARGS(video_duration)
+      );
+
+        GST_OBJECT_LOCK (mElement);
+        mCurrentTime = current_time_new;
+        GST_OBJECT_UNLOCK (mElement);
+    }
+
+//    if (!GST_CLOCK_TIME_IS_VALID (mCurrentTime)) {
+////      GstClockTime audio_frame_duration = gst_util_uint64_scale (frames, GST_SECOND, mRate);
+////      GstClockTime video_frame_time = gst_util_uint64_scale (mElement->n_frames ? mElement->n_frames - 1 : 0,
+////                                                             mElement->vinfo.fps_d * GST_SECOND,
+////                                                             mElement->vinfo.fps_n);
+//
+//      mCurrentTime = video_frame_time > audio_frame_duration ? video_frame_time - audio_frame_duration : 0;
+//      GST_WARNING_OBJECT(mElement, "Init audio time from video frame counter, time=%" GST_TIME_FORMAT, GST_TIME_ARGS(mCurrentTime));
+//    }
 
     GST_BUFFER_PTS (buf) = mCurrentTime;
     GST_BUFFER_DTS (buf) = mCurrentTime;
