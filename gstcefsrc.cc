@@ -107,8 +107,8 @@ static gboolean gst_cef_src_check_time(GstCefSrc *src, gboolean audio_flag) {
   GstClockTime audio_frame_time = src->audio_frame_time;
 //  GstClockTime audio_frame_duration = src->audio_frame_duration;
 
-  if (video_frame_time < pipeline_time - video_frame_duration ||
-      video_frame_time > pipeline_time + video_frame_duration * 5) {
+  if ((pipeline_time >= video_frame_duration && video_frame_time < pipeline_time - video_frame_duration)
+      || video_frame_time > pipeline_time + video_frame_duration * 5) {
 
     guint64 new_index = gst_util_uint64_scale (pipeline_time, src->vinfo.fps_n, src->vinfo.fps_d * GST_SECOND);
 
@@ -315,7 +315,7 @@ class AudioHandler : public CefAudioHandler
     GstClockTime audio_frame_duration = gst_util_uint64_scale (frames, GST_SECOND, mRate);
 
     // First audio frame pts in buffer has to be synced with video
-    if (mElement->audio_buffers) {
+    if (!mElement->audio_buffers) {
       GstClockTime video_frame_time = gst_util_uint64_scale (mElement->video_frame_index,
                                                              mElement->vinfo.fps_d * GST_SECOND,
                                                              mElement->vinfo.fps_n);
