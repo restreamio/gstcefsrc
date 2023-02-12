@@ -86,7 +86,7 @@ gchar* get_plugin_base_path () {
   return base_path;
 }
 
-static gboolean gst_cef_src_check_time(GstCefSrc *src) {
+static gboolean gst_cef_src_check_time(GstCefSrc *src, gboolean audio_flag) {
   GstClock *clock = GST_ELEMENT_CLOCK (src);
   if (!clock) {
     GST_WARNING_OBJECT(src, "Can't get element clock object");
@@ -132,24 +132,26 @@ static gboolean gst_cef_src_check_time(GstCefSrc *src) {
   }
 
   if (audio_frame_time < video_frame_time) {
-    GstClockTime new_time = video_frame_time;
+    GstClockTime new_time = video_frame_time + video_frame_duration / 4;
 
-    GST_WARNING_OBJECT(
-        src,
-        "Correct audio time"
-          ", cur time=%" GST_TIME_FORMAT
-          ", new time=%" GST_TIME_FORMAT
+    if (audio_flag) {
+      GST_WARNING_OBJECT(
+          src,
+          "Correct audio time"
+            ", cur time=%" GST_TIME_FORMAT
+            ", new time=%" GST_TIME_FORMAT
 //          ", duration=%" GST_TIME_FORMAT
-          ", video time=%" GST_TIME_FORMAT
-          ", video duration=%" GST_TIME_FORMAT
-          ", pipeline=%" GST_TIME_FORMAT,
-        GST_TIME_ARGS(audio_frame_time),
-        GST_TIME_ARGS(new_time),
+            ", video time=%" GST_TIME_FORMAT
+            ", video duration=%" GST_TIME_FORMAT
+            ", pipeline=%" GST_TIME_FORMAT,
+          GST_TIME_ARGS(audio_frame_time),
+          GST_TIME_ARGS(new_time),
 //        GST_TIME_ARGS(audio_frame_duration),
-        GST_TIME_ARGS(video_frame_time),
-        GST_TIME_ARGS(video_frame_duration),
-        GST_TIME_ARGS(pipeline_time)
-    );
+          GST_TIME_ARGS(video_frame_time),
+          GST_TIME_ARGS(video_frame_duration),
+          GST_TIME_ARGS(pipeline_time)
+      );
+    }
 
     audio_frame_time = new_time;
   }
@@ -313,7 +315,7 @@ class AudioHandler : public CefAudioHandler
     GstClockTime audio_frame_duration = gst_util_uint64_scale (frames, GST_SECOND, mRate);
 
     // First audio frame pts in buffer has to be synced with video
-    if (mElement->audio_buffers && gst_buffer_list_length(mElement->audio_buffers)) {
+    if (mElement->audio_buffers) {
       GstClockTime video_frame_time = gst_util_uint64_scale (mElement->video_frame_index,
                                                              mElement->vinfo.fps_d * GST_SECOND,
                                                              mElement->vinfo.fps_n);
@@ -322,7 +324,7 @@ class AudioHandler : public CefAudioHandler
                                                                  mElement->vinfo.fps_n);
 
       if (mElement->audio_frame_time > video_frame_time + video_frame_duration * 3) {
-        GstClockTime new_time = video_frame_time;
+        GstClockTime new_time = video_frame_time + video_frame_duration / 4;
 
         GST_WARNING_OBJECT(
             mElement,
@@ -578,9 +580,11 @@ static GstFlowReturn gst_cef_src_create(GstPushSrc *push_src, GstBuffer **buf)
   g_assert (src->current_buffer);
   *buf = gst_buffer_copy (src->current_buffer);
 
+  gboolean audio_flag = false;
   if (src->audio_buffers) {
     gst_buffer_add_cef_audio_meta (*buf, src->audio_buffers);
     src->audio_buffers = NULL;
+    audio_flag = TRUE;
   }
 
   GstClockTime frame_time = gst_util_uint64_scale (src->video_frame_index, src->vinfo.fps_d * GST_SECOND, src->vinfo.fps_n);
@@ -596,7 +600,7 @@ static GstFlowReturn gst_cef_src_create(GstPushSrc *push_src, GstBuffer **buf)
 
   GST_OBJECT_UNLOCK (src);
 
-  if (!gst_cef_src_check_time(src))
+  if (!gst_cef_src_check_time(src, audio_flag))
     return GST_FLOW_ERROR;
 
   return GST_FLOW_OK;
@@ -801,8 +805,7 @@ gst_cef_src_stop (GstBaseSrc *base_src)
 }
 
 static void
-gst_cef_src_get_times (GstBaseSrc * base_src, GstBuffer * buffer,
-    GstClockTime * start, GstClockTime * end)
+gst_cef_src_get_times (GstBaseSrc * base_src, GstBuffer * buffer, GstClockTime * start, GstClockTime * end)
 {
   GstClockTime timestamp = GST_BUFFER_PTS (buffer);
   GstClockTime duration = GST_BUFFER_DURATION (buffer);
@@ -810,7 +813,7 @@ gst_cef_src_get_times (GstBaseSrc * base_src, GstBuffer * buffer,
   *start = timestamp;
   *end = timestamp + duration;
 
-  GST_LOG_OBJECT (base_src, "Got times start: %" GST_TIME_FORMAT " end: %" GST_TIME_FORMAT, GST_TIME_ARGS (*start), GST_TIME_ARGS (*end));
+  // GST_LOG_OBJECT (base_src, "Got times start: %" GST_TIME_FORMAT " end: %" GST_TIME_FORMAT, GST_TIME_ARGS (*start), GST_TIME_ARGS (*end));
 }
 
 
