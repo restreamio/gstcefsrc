@@ -87,6 +87,8 @@ gchar* get_plugin_base_path () {
 }
 
 static void gst_cef_src_log_add(GstCefSrc *src, const char *format, ...) {
+  GST_LOG_OBJECT(src, "log_add");
+
   va_list args;
   va_start(args, format);
   char log_buf[256];
@@ -108,6 +110,8 @@ static void gst_cef_src_log_add(GstCefSrc *src, const char *format, ...) {
 }
 
 static void gst_cef_src_log_flush(GstCefSrc *src) {
+  GST_LOG_OBJECT(src, "log_flush");
+
   GST_OBJECT_LOCK (src);
 
   int index = 0;
@@ -195,6 +199,8 @@ static gboolean gst_cef_src_check_time(GstCefSrc *src, gboolean audio_flag) {
     audio_frame_time = new_time;
   }
 
+  GST_LOG_OBJECT(src, "log check time");
+
   gst_cef_src_log_add(src,
                       "Check time"
                         ", video index=%" G_GUINT64_FORMAT
@@ -241,6 +247,8 @@ class RenderHandler : public CefRenderHandler
 
     void OnPaint(CefRefPtr<CefBrowser> browser, PaintElementType type, const RectList &dirtyRects, const void * buffer, int w, int h) override
     {
+      GST_LOG_OBJECT(element, "log OnPaint");
+
       gst_cef_src_log_add(element, "Capture video, width=%d, height=%d", w, h);
 
       GstBuffer *new_buffer;
@@ -325,6 +333,8 @@ class AudioHandler : public CefAudioHandler
                            int frames,
                            int64_t pts) override
   {
+    GST_LOG_OBJECT(mElement, "log OnAudioStreamPacket");
+
     gst_cef_src_log_add(mElement,
                         "Capture audio, samples=%d, time=%" GST_TIME_FORMAT,
                         frames,
@@ -612,6 +622,8 @@ static GstFlowReturn gst_cef_src_create(GstPushSrc *push_src, GstBuffer **buf)
   GstClockTime frame_duration = gst_util_uint64_scale (GST_SECOND,
                                                        src->vinfo.fps_d,
                                                        src->vinfo.fps_n);
+
+  GST_LOG_OBJECT(src, "log create");
 
   gst_cef_src_log_add(src,
                       "Push frame, index=%" G_GUINT64_FORMAT ", time=%" GST_TIME_FORMAT,
