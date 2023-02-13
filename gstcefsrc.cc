@@ -100,7 +100,11 @@ static void gst_cef_src_log_add(GstCefSrc *src, const char *format, ...) {
   timespec_get(&ts, TIME_UTC);
   GstClockTime time = GST_TIMESPEC_TO_TIME(ts);
 
+  GST_LOG_OBJECT(src, "log_add_2, %s", log_buf);
+
   GST_OBJECT_LOCK (src);
+
+  GST_LOG_OBJECT(src, "log_add_3");
 
   src->log_queue.push(GstCefLogItem(time, log_buf));
   while (src->log_queue.size() > 100)
