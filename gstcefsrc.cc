@@ -847,8 +847,8 @@ gst_cef_src_stop (GstBaseSrc *base_src)
   }
 
   GST_OBJECT_LOCK (src);
-  std::queue<std::string> empty;
-  std::swap(src->log_queue, empty );
+  std::queue<GstCefLogItem> empty;
+  std::swap(src->log_queue, empty);
   GST_OBJECT_UNLOCK(src);
 
   return TRUE;
