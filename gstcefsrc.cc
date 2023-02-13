@@ -87,8 +87,6 @@ gchar* get_plugin_base_path () {
 }
 
 static void gst_cef_src_log_add(GstCefSrc *src, const char *format, ...) {
-  GST_LOG_OBJECT(src, "log_add");
-
   va_list args;
   va_start(args, format);
   char log_buf[256];
@@ -100,31 +98,14 @@ static void gst_cef_src_log_add(GstCefSrc *src, const char *format, ...) {
   timespec_get(&ts, TIME_UTC);
   GstClockTime time = GST_TIMESPEC_TO_TIME(ts);
 
-  GST_LOG_OBJECT(src, "log_add_2, %s", log_buf);
-
   GST_OBJECT_LOCK (src);
-
-  GST_LOG_OBJECT(src, "log_add_3");
-
-  GstCefLogItem li = GstCefLogItem(time, log_buf);
-
-  GST_LOG_OBJECT(src, "log_add_4");
-
-  src->log_queue->push(li);
-
-  GST_LOG_OBJECT(src, "log_add_5");
-
+  src->log_queue->push(GstCefLogItem(time, log_buf));
   while (src->log_queue->size() > 100)
     src->log_queue->pop();
-
-  GST_LOG_OBJECT(src, "log_add_6");
-
   GST_OBJECT_UNLOCK (src);
 }
 
 static void gst_cef_src_log_flush(GstCefSrc *src) {
-  GST_LOG_OBJECT(src, "log_flush");
-
   GST_OBJECT_LOCK (src);
 
   int index = 0;
@@ -133,6 +114,7 @@ static void gst_cef_src_log_flush(GstCefSrc *src) {
     src->log_queue->pop();
 
     GST_WARNING_OBJECT(src, "Pre #%i: %" GST_TIME_FORMAT " %s", index, GST_TIME_ARGS(log.time), log.log.c_str());
+    index++;
   }
 
   GST_OBJECT_UNLOCK (src);
@@ -212,8 +194,6 @@ static gboolean gst_cef_src_check_time(GstCefSrc *src, gboolean audio_flag) {
     audio_frame_time = new_time;
   }
 
-  GST_LOG_OBJECT(src, "log check time");
-
   gst_cef_src_log_add(src,
                       "Check time"
                         ", video index=%" G_GUINT64_FORMAT
@@ -252,7 +232,6 @@ class RenderHandler : public CefRenderHandler
 
     void GetViewRect(CefRefPtr<CefBrowser> browser, CefRect &rect) override
     {
-	    // GST_LOG_OBJECT(element, "getting view rect");
       GST_OBJECT_LOCK (element);
       rect = CefRect(0, 0, element->vinfo.width ? element->vinfo.width : DEFAULT_WIDTH, element->vinfo.height ? element->vinfo.height : DEFAULT_HEIGHT);
       GST_OBJECT_UNLOCK (element);
@@ -260,8 +239,6 @@ class RenderHandler : public CefRenderHandler
 
     void OnPaint(CefRefPtr<CefBrowser> browser, PaintElementType type, const RectList &dirtyRects, const void * buffer, int w, int h) override
     {
-      GST_LOG_OBJECT(element, "log OnPaint");
-
       gst_cef_src_log_add(element, "Capture video, width=%d, height=%d", w, h);
 
       GstBuffer *new_buffer;
@@ -272,8 +249,6 @@ class RenderHandler : public CefRenderHandler
       gst_buffer_replace (&(element->current_buffer), new_buffer);
       gst_buffer_unref (new_buffer);
       GST_OBJECT_UNLOCK (element);
-
-      // GST_LOG_OBJECT (element, "done painting");
     }
 
   private:
@@ -346,8 +321,6 @@ class AudioHandler : public CefAudioHandler
                            int frames,
                            int64_t pts) override
   {
-    GST_LOG_OBJECT(mElement, "log OnAudioStreamPacket");
-
     gst_cef_src_log_add(mElement,
                         "Capture audio, samples=%d, time=%" GST_TIME_FORMAT,
                         frames,
@@ -635,8 +608,6 @@ static GstFlowReturn gst_cef_src_create(GstPushSrc *push_src, GstBuffer **buf)
   GstClockTime frame_duration = gst_util_uint64_scale (GST_SECOND,
                                                        src->vinfo.fps_d,
                                                        src->vinfo.fps_n);
-
-  GST_LOG_OBJECT(src, "log create");
 
   gst_cef_src_log_add(src,
                       "Push frame, index=%" G_GUINT64_FORMAT ", time=%" GST_TIME_FORMAT,
@@ -935,7 +906,6 @@ gst_cef_src_fixate (GstBaseSrc * base_src, GstCaps * caps)
     gst_structure_fixate_field_nearest_fraction (structure, "framerate", DEFAULT_FPS_N, DEFAULT_FPS_D);
   else
     gst_structure_set (structure, "framerate", GST_TYPE_FRACTION, DEFAULT_FPS_N, DEFAULT_FPS_D, NULL);
-
 
   caps = GST_BASE_SRC_CLASS (parent_class)->fixate (base_src, caps);
 
