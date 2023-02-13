@@ -106,9 +106,18 @@ static void gst_cef_src_log_add(GstCefSrc *src, const char *format, ...) {
 
   GST_LOG_OBJECT(src, "log_add_3");
 
-  src->log_queue.push(GstCefLogItem(time, log_buf));
+  GstCefLogItem li = GstCefLogItem(time, log_buf);
+
+  GST_LOG_OBJECT(src, "log_add_4");
+
+  src->log_queue.push(li);
+
+  GST_LOG_OBJECT(src, "log_add_5");
+
   while (src->log_queue.size() > 100)
     src->log_queue.pop();
+
+  GST_LOG_OBJECT(src, "log_add_6");
 
   GST_OBJECT_UNLOCK (src);
 }

@@ -33,6 +33,11 @@ struct GstCefLogItem {
     GstClockTime time;
     std::string log;
 
+    GstCefLogItem(const GstCefLogItem &src) {
+      this->time = src.time;
+      this->log = src.log;
+    }
+
     GstCefLogItem(GstClockTime time, const char *log) {
       this->time = time;
       this->log = log;
