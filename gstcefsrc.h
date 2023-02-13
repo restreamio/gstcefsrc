@@ -10,6 +10,7 @@
 #include <include/cef_life_span_handler.h>
 #include <include/cef_load_handler.h>
 #include <include/wrapper/cef_helpers.h>
+#include <queue>
 
 
 G_BEGIN_DECLS
@@ -27,6 +28,16 @@ G_BEGIN_DECLS
 
 typedef struct _GstCefSrc GstCefSrc;
 typedef struct _GstCefSrcClass GstCefSrcClass;
+
+struct GstCefLogItem {
+    GstClockTime time;
+    std::string log;
+
+    GstCefLogItem(GstClockTime time, const char *log) {
+      this->time = time;
+      this->log = log;
+    }
+};
 
 struct _GstCefSrc {
   GstPushSrc parent;
@@ -55,6 +66,8 @@ struct _GstCefSrc {
   GCond state_cond;
   GMutex state_lock;
   gboolean started;
+
+  std::queue<GstCefLogItem> log_queue;
 };
 
 struct _GstCefSrcClass {
