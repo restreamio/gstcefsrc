@@ -72,7 +72,7 @@ struct _GstCefSrc {
   GMutex state_lock;
   gboolean started;
 
-  std::queue<GstCefLogItem> log_queue;
+  std::queue<GstCefLogItem> *log_queue;
 };
 
 struct _GstCefSrcClass {

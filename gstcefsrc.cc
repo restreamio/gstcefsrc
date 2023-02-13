@@ -110,12 +110,12 @@ static void gst_cef_src_log_add(GstCefSrc *src, const char *format, ...) {
 
   GST_LOG_OBJECT(src, "log_add_4");
 
-  src->log_queue.push(li);
+  src->log_queue->push(li);
 
   GST_LOG_OBJECT(src, "log_add_5");
 
-  while (src->log_queue.size() > 100)
-    src->log_queue.pop();
+  while (src->log_queue->size() > 100)
+    src->log_queue->pop();
 
   GST_LOG_OBJECT(src, "log_add_6");
 
@@ -128,9 +128,9 @@ static void gst_cef_src_log_flush(GstCefSrc *src) {
   GST_OBJECT_LOCK (src);
 
   int index = 0;
-  while (src->log_queue.size()) {
-    GstCefLogItem log = src->log_queue.front();
-    src->log_queue.pop();
+  while (src->log_queue->size()) {
+    GstCefLogItem log = src->log_queue->front();
+    src->log_queue->pop();
 
     GST_WARNING_OBJECT(src, "Pre #%i: %" GST_TIME_FORMAT " %s", index, GST_TIME_ARGS(log.time), log.log.c_str());
   }
@@ -836,6 +836,7 @@ gst_cef_src_start(GstBaseSrc *base_src)
 //  src->global_frame_time = 0;
   src->video_frame_index = 0;
   src->audio_frame_time = 0;
+  src->log_queue = new std::queue<GstCefLogItem>();
 //  src->audio_frame_duration = 0;
   GST_OBJECT_UNLOCK (src);
 
@@ -872,8 +873,8 @@ gst_cef_src_stop (GstBaseSrc *base_src)
   }
 
   GST_OBJECT_LOCK (src);
-  std::queue<GstCefLogItem> empty;
-  std::swap(src->log_queue, empty);
+  delete src->log_queue;
+  src->log_queue = NULL;
   GST_OBJECT_UNLOCK(src);
 
   return TRUE;
