@@ -101,7 +101,7 @@ static void gst_cef_src_log_add(GstCefSrc *src, const char *format, ...) {
   GST_OBJECT_LOCK (src);
   if (src->log_queue) {
     src->log_queue->push(GstCefLogItem(time, log_buf));
-    while (src->log_queue->size() > 100)
+    while (src->log_queue->size() > 50)
       src->log_queue->pop();
   }
   GST_OBJECT_UNLOCK (src);
@@ -172,7 +172,7 @@ static gboolean gst_cef_src_check_time(GstCefSrc *src, gboolean audio_flag) {
   }
 
   if (audio_frame_time < video_frame_time) {
-    GstClockTime new_time = video_frame_time + video_frame_duration / 4;
+    GstClockTime new_time = video_frame_time + video_frame_duration / 2;
 
     if (audio_flag) {
       GST_WARNING_OBJECT(
@@ -359,7 +359,7 @@ class AudioHandler : public CefAudioHandler
                                                                  mElement->vinfo.fps_n);
 
       if (mElement->audio_frame_time > video_frame_time + video_frame_duration * 3) {
-        GstClockTime new_time = video_frame_time + video_frame_duration / 4;
+        GstClockTime new_time = video_frame_time + video_frame_duration / 2;
 
         GST_WARNING_OBJECT(
             mElement,
