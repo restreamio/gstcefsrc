@@ -99,22 +99,26 @@ static void gst_cef_src_log_add(GstCefSrc *src, const char *format, ...) {
   GstClockTime time = GST_TIMESPEC_TO_TIME(ts);
 
   GST_OBJECT_LOCK (src);
-  src->log_queue->push(GstCefLogItem(time, log_buf));
-  while (src->log_queue->size() > 100)
-    src->log_queue->pop();
+  if (src->log_queue) {
+    src->log_queue->push(GstCefLogItem(time, log_buf));
+    while (src->log_queue->size() > 100)
+      src->log_queue->pop();
+  }
   GST_OBJECT_UNLOCK (src);
 }
 
 static void gst_cef_src_log_flush(GstCefSrc *src) {
   GST_OBJECT_LOCK (src);
 
-  int index = 0;
-  while (src->log_queue->size()) {
-    GstCefLogItem log = src->log_queue->front();
-    src->log_queue->pop();
+  if (src->log_queue) {
+    int index = 0;
+    while (src->log_queue->size()) {
+      GstCefLogItem log = src->log_queue->front();
+      src->log_queue->pop();
 
-    GST_WARNING_OBJECT(src, "Pre #%i: %" GST_TIME_FORMAT " %s", index, GST_TIME_ARGS(log.time), log.log.c_str());
-    index++;
+      GST_WARNING_OBJECT(src, "Pre #%i: %" GST_TIME_FORMAT " %s", index, GST_TIME_ARGS(log.time), log.log.c_str());
+      index++;
+    }
   }
 
   GST_OBJECT_UNLOCK (src);
