@@ -150,10 +150,13 @@ static gboolean gst_cef_src_check_time(GstCefSrc *src, gboolean audio_flag) {
 
     guint64 new_index = gst_util_uint64_scale (pipeline_time, src->vinfo.fps_n, src->vinfo.fps_d * GST_SECOND);
 
-    GST_WARNING_OBJECT(
+    // If we have neither video nor audio frames from CEF, we allow the pipeline to have lags and
+    // jump forwards without warnings
+    if (audio_flag || new_index < video_frame_index || new_index > video_frame_index + 10) {
+      GST_WARNING_OBJECT(
         src,
         "Correct video time"
-          ", cur index=%" G_GUINT64_FORMAT
+        ", cur index=%" G_GUINT64_FORMAT
           ", cur time=%" GST_TIME_FORMAT
           ", new index=%" G_GUINT64_FORMAT
           ", duration=%" GST_TIME_FORMAT
@@ -163,9 +166,10 @@ static gboolean gst_cef_src_check_time(GstCefSrc *src, gboolean audio_flag) {
         new_index,
         GST_TIME_ARGS(video_frame_duration),
         GST_TIME_ARGS(pipeline_time)
-    );
+      );
 
-    gst_cef_src_log_flush(src);
+      gst_cef_src_log_flush(src);
+    }
 
     video_frame_index = new_index;
     video_frame_time = gst_util_uint64_scale (src->video_frame_index, src->vinfo.fps_d * GST_SECOND, src->vinfo.fps_n);
@@ -176,20 +180,20 @@ static gboolean gst_cef_src_check_time(GstCefSrc *src, gboolean audio_flag) {
 
     if (audio_flag) {
       GST_WARNING_OBJECT(
-          src,
-          "Correct audio time"
-            ", cur time=%" GST_TIME_FORMAT
-            ", new time=%" GST_TIME_FORMAT
+        src,
+        "Correct audio time"
+          ", cur time=%" GST_TIME_FORMAT
+          ", new time=%" GST_TIME_FORMAT
 //          ", duration=%" GST_TIME_FORMAT
-            ", video time=%" GST_TIME_FORMAT
-            ", video duration=%" GST_TIME_FORMAT
-            ", pipeline=%" GST_TIME_FORMAT,
-          GST_TIME_ARGS(audio_frame_time),
-          GST_TIME_ARGS(new_time),
+          ", video time=%" GST_TIME_FORMAT
+          ", video duration=%" GST_TIME_FORMAT
+          ", pipeline=%" GST_TIME_FORMAT,
+        GST_TIME_ARGS(audio_frame_time),
+        GST_TIME_ARGS(new_time),
 //        GST_TIME_ARGS(audio_frame_duration),
-          GST_TIME_ARGS(video_frame_time),
-          GST_TIME_ARGS(video_frame_duration),
-          GST_TIME_ARGS(pipeline_time)
+        GST_TIME_ARGS(video_frame_time),
+        GST_TIME_ARGS(video_frame_duration),
+        GST_TIME_ARGS(pipeline_time)
       );
 
       gst_cef_src_log_flush(src);
@@ -198,18 +202,20 @@ static gboolean gst_cef_src_check_time(GstCefSrc *src, gboolean audio_flag) {
     audio_frame_time = new_time;
   }
 
-  gst_cef_src_log_add(src,
-                      "Check time"
-                        ", video index=%" G_GUINT64_FORMAT
-                        ", video time=%" GST_TIME_FORMAT
-                        ", video duration=%" GST_TIME_FORMAT
-                        ", audio time=%" GST_TIME_FORMAT
-                        ", pipeline=%" GST_TIME_FORMAT,
-                      video_frame_index,
-                      GST_TIME_ARGS(video_frame_time),
-                      GST_TIME_ARGS(video_frame_duration),
-                      GST_TIME_ARGS(audio_frame_time),
-                      GST_TIME_ARGS(pipeline_time));
+  gst_cef_src_log_add(
+    src,
+    "Check time"
+      ", video index=%" G_GUINT64_FORMAT
+      ", video time=%" GST_TIME_FORMAT
+      ", video duration=%" GST_TIME_FORMAT
+      ", audio time=%" GST_TIME_FORMAT
+      ", pipeline=%" GST_TIME_FORMAT,
+    video_frame_index,
+    GST_TIME_ARGS(video_frame_time),
+    GST_TIME_ARGS(video_frame_duration),
+    GST_TIME_ARGS(audio_frame_time),
+    GST_TIME_ARGS(pipeline_time)
+  );
 
   GST_OBJECT_LOCK (src);
   //src->global_frame_time = now;
