@@ -365,7 +365,7 @@ class AudioHandler : public CefAudioHandler
                                                                  mElement->vinfo.fps_n);
 
       if (mElement->audio_frame_time > video_frame_time + video_frame_duration * 3) {
-        GstClockTime new_time = video_frame_time + video_frame_duration ;
+        GstClockTime new_time = video_frame_time + video_frame_duration;
 
         GST_WARNING_OBJECT(
             mElement,
