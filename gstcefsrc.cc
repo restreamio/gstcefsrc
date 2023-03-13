@@ -352,6 +352,15 @@ class AudioHandler : public CefAudioHandler
     }
     gst_buffer_unmap (buf, &info);
 
+    // Write all audio data to the file
+    // TODO Remove for production
+    FILE *f = fopen("audio.raw", "a");
+    GstMapInfo info2;
+    gst_buffer_map (buf, &info2, GST_MAP_WRITE);
+    fwrite(info2.data, info2.size, 1, f);
+    gst_buffer_unmap (buf, &info2);
+    fclose(f);
+
     GstClockTime audio_frame_duration = gst_util_uint64_scale (frames, GST_SECOND, mRate);
 
     // First audio frame pts in buffer has to be synced with video
@@ -642,7 +651,7 @@ static GstFlowReturn gst_cef_src_create(GstPushSrc *push_src, GstBuffer **buf)
   if (src->audio_buffers) {
     gst_buffer_add_cef_audio_meta (*buf, src->audio_buffers);
     src->audio_buffers = NULL;
-    audio_flag = TRUE;
+    audio_flag = true;
   }
 
   GST_BUFFER_PTS (*buf) = frame_time;
