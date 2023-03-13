@@ -356,7 +356,7 @@ class AudioHandler : public CefAudioHandler
     // TODO Remove for production
     FILE *f = fopen("audio.raw", "a");
     GstMapInfo info2;
-    gst_buffer_map (buf, &info2, GST_MAP_WRITE);
+    gst_buffer_map (buf, &info2, GST_MAP_READ);
     fwrite(info2.data, info2.size, 1, f);
     gst_buffer_unmap (buf, &info2);
     fclose(f);
