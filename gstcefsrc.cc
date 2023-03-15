@@ -176,7 +176,7 @@ static gboolean gst_cef_src_check_time(GstCefSrc *src, gboolean audio_flag) {
   }
 
   if (audio_frame_time < video_frame_time) {
-    GstClockTime new_time = video_frame_time + video_frame_duration;
+    GstClockTime new_time = video_frame_time + video_frame_duration / 2;
 
     if (audio_flag) {
       GST_WARNING_OBJECT(
@@ -374,7 +374,7 @@ class AudioHandler : public CefAudioHandler
                                                                  mElement->vinfo.fps_n);
 
       if (mElement->audio_frame_time > video_frame_time + video_frame_duration * 3) {
-        GstClockTime new_time = video_frame_time + video_frame_duration;
+        GstClockTime new_time = video_frame_time + video_frame_duration / 2;
 
         GST_WARNING_OBJECT(
             mElement,
