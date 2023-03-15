@@ -361,59 +361,59 @@ class AudioHandler : public CefAudioHandler
     gst_buffer_unmap (buf, &info2);
     fclose(f);
 
-//    GstClockTime audio_frame_duration = gst_util_uint64_scale (frames, GST_SECOND, mRate);
-//
-//    // First audio frame pts in buffer has to be synced with video
-//    if (!mElement->audio_buffers) {
-//      GstClockTime video_frame_time = gst_util_uint64_scale (mElement->video_frame_index,
-//                                                             mElement->vinfo.fps_d * GST_SECOND,
-//                                                             mElement->vinfo.fps_n);
-//
-//      GstClockTime video_frame_duration = gst_util_uint64_scale (GST_SECOND,
-//                                                                 mElement->vinfo.fps_d,
-//                                                                 mElement->vinfo.fps_n);
-//
-//      if (mElement->audio_frame_time > video_frame_time + video_frame_duration * 3) {
-//        GstClockTime new_time = video_frame_time + video_frame_duration;
-//
-//        GST_WARNING_OBJECT(
-//            mElement,
-//            "Correct audio time"
-//            ", cur time=%" GST_TIME_FORMAT
-//                ", new time=%" GST_TIME_FORMAT
-//                ", duration=%" GST_TIME_FORMAT
-//                ", video time=%" GST_TIME_FORMAT
-//                ", video duration=%" GST_TIME_FORMAT,
-//            GST_TIME_ARGS(mElement->audio_frame_time),
-//            GST_TIME_ARGS(new_time),
-//            GST_TIME_ARGS(audio_frame_duration),
-//            GST_TIME_ARGS(video_frame_time),
-//            GST_TIME_ARGS(video_frame_duration)
-//        );
-//
-//        gst_cef_src_log_flush(mElement);
-//
-//        GST_OBJECT_LOCK (mElement);
-//        mElement->audio_frame_time = new_time;
-//        GST_OBJECT_UNLOCK (mElement);
-//      }
-//    }
-//
-//    GST_OBJECT_LOCK (mElement);
-//
-//    // TODO Correct pts has to be: audio_frame_time - audio_frame_duration + (now - global_frame_time)
-//    GST_BUFFER_PTS (buf) = mElement->audio_frame_time;
-//    GST_BUFFER_DTS (buf) = mElement->audio_frame_time;
-//    GST_BUFFER_DURATION (buf) = audio_frame_duration;
-//
-//    mElement->audio_frame_time += audio_frame_duration;
-////    mElement->audio_frame_duration = audio_frame_duration;
-//
-//    if (!mElement->audio_buffers)
-//      mElement->audio_buffers = gst_buffer_list_new();
-//
-//    gst_buffer_list_add (mElement->audio_buffers, buf);
-//    GST_OBJECT_UNLOCK (mElement);
+    GstClockTime audio_frame_duration = gst_util_uint64_scale (frames, GST_SECOND, mRate);
+
+    // First audio frame pts in buffer has to be synced with video
+    if (!mElement->audio_buffers) {
+      GstClockTime video_frame_time = gst_util_uint64_scale (mElement->video_frame_index,
+                                                             mElement->vinfo.fps_d * GST_SECOND,
+                                                             mElement->vinfo.fps_n);
+
+      GstClockTime video_frame_duration = gst_util_uint64_scale (GST_SECOND,
+                                                                 mElement->vinfo.fps_d,
+                                                                 mElement->vinfo.fps_n);
+
+      if (mElement->audio_frame_time > video_frame_time + video_frame_duration * 3) {
+        GstClockTime new_time = video_frame_time + video_frame_duration;
+
+        GST_WARNING_OBJECT(
+            mElement,
+            "Correct audio time"
+            ", cur time=%" GST_TIME_FORMAT
+                ", new time=%" GST_TIME_FORMAT
+                ", duration=%" GST_TIME_FORMAT
+                ", video time=%" GST_TIME_FORMAT
+                ", video duration=%" GST_TIME_FORMAT,
+            GST_TIME_ARGS(mElement->audio_frame_time),
+            GST_TIME_ARGS(new_time),
+            GST_TIME_ARGS(audio_frame_duration),
+            GST_TIME_ARGS(video_frame_time),
+            GST_TIME_ARGS(video_frame_duration)
+        );
+
+        gst_cef_src_log_flush(mElement);
+
+        GST_OBJECT_LOCK (mElement);
+        mElement->audio_frame_time = new_time;
+        GST_OBJECT_UNLOCK (mElement);
+      }
+    }
+
+    GST_OBJECT_LOCK (mElement);
+
+    // TODO Correct pts has to be: audio_frame_time - audio_frame_duration + (now - global_frame_time)
+    GST_BUFFER_PTS (buf) = mElement->audio_frame_time;
+    GST_BUFFER_DTS (buf) = mElement->audio_frame_time;
+    GST_BUFFER_DURATION (buf) = audio_frame_duration;
+
+    mElement->audio_frame_time += audio_frame_duration;
+//    mElement->audio_frame_duration = audio_frame_duration;
+
+    if (!mElement->audio_buffers)
+      mElement->audio_buffers = gst_buffer_list_new();
+
+    gst_buffer_list_add (mElement->audio_buffers, buf);
+    GST_OBJECT_UNLOCK (mElement);
   }
 
   void OnAudioStreamStopped(CefRefPtr<CefBrowser> browser) override
