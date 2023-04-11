@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8.12.1)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CONFIGURATION_TYPES Debug Release)
 
 project(gstcef)
@@ -12,7 +13,7 @@ if(POLICY CMP0074)
 endif()
 
 if (NOT DEFINED CEF_VERSION)
-  set(CEF_VERSION "103.0.9+gd0bbcbb+chromium-103.0.5060.114")
+  set(CEF_VERSION "112.2.7+gef29713+chromium-112.0.5615.49")
 endif()
 
 STRING(REGEX REPLACE "\\+" "%2B" CEF_ESCAPED_VERSION ${CEF_VERSION})
