@@ -19,7 +19,7 @@ GST_DEBUG_CATEGORY_STATIC (cef_console_debug);
 #define DEFAULT_FPS_N 30
 #define DEFAULT_FPS_D 1
 #define DEFAULT_URL "https://www.google.com"
-#define DEFAULT_GPU FALSE
+#define DEFAULT_GPU TRUE
 #define DEFAULT_CHROMIUM_DEBUG_PORT -1
 #define DEFAULT_LOG_SEVERITY LOGSEVERITY_DISABLE
 #define DEFAULT_SANDBOX FALSE
@@ -572,16 +572,32 @@ class App : public CefApp
   virtual void OnBeforeCommandLineProcessing(const CefString &process_type,
                                              CefRefPtr<CefCommandLine> command_line) override
   {
-    command_line->AppendSwitchWithValue("autoplay-policy", "no-user-gesture-required");
-    command_line->AppendSwitch("enable-media-stream");
-    command_line->AppendSwitch("disable-dev-shm-usage"); /* https://github.com/GoogleChrome/puppeteer/issues/1834 */
-    command_line->AppendSwitch("enable-begin-frame-scheduling"); /* https://bitbucket.org/chromiumembedded/cef/issues/1368 */
+    // Disable features that are not working well inside a docker container
+    command_line->AppendSwitch("disable-extensions");
+    command_line->AppendSwitch("disable-dev-shm-usage");
 
+    // Enable WebRTC
+    command_line->AppendSwitch("enable-media-stream");
+
+    // Give priority to audio to avoid glitches
+    command_line->AppendSwitch("audio-process-high-priority");
+    command_line->AppendSwitchWithValue("enable-features", "AudioServiceLaunchOnStartup");
+    command_line->AppendSwitchWithValue("disable-features", "AudioServiceOutOfProcess");
+
+    // Autoplay audio
+    command_line->AppendSwitchWithValue("autoplay-policy", "no-user-gesture-required");
+
+    // Force software rendering if needed
     if (!src->gpu) {
-      // Optimize for no gpu usage
       command_line->AppendSwitch("disable-gpu");
       command_line->AppendSwitch("disable-gpu-compositing");
     }
+
+    // Don't use VSync for drawing but the targeted off-screen frame rate
+    command_line->AppendSwitch("disable-gpu-vsync");
+    command_line->AppendSwitch("enable-begin-frame-scheduling");
+    command_line->AppendSwitch("off-screen-rendering-enabled");
+    command_line->AppendSwitchWithValue("off-screen-frame-rate", "60");
 
     if (src->chromium_debug_port >= 0) {
       command_line->AppendSwitchWithValue("remote-debugging-port", g_strdup_printf ("%i", src->chromium_debug_port));
@@ -1090,6 +1106,7 @@ gst_cef_src_init (GstCefSrc * src)
   src->audio_events = NULL;
   src->started = FALSE;
   src->chromium_debug_port = DEFAULT_CHROMIUM_DEBUG_PORT;
+  src->gpu = DEFAULT_GPU;
   src->sandbox = DEFAULT_SANDBOX;
   src->js_flags = NULL;
   src->log_severity = DEFAULT_LOG_SEVERITY;
